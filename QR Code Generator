@@ -1,0 +1,44 @@
+pip install tk pyqrcode pypng
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import pyqrcode
+import png
+
+# Function to generate QR code and save it as a .png file
+def generate_qr():
+    # Get the input text from the entry widget
+    text = input_text.get()
+    
+    # Check if the input text is not empty
+    if text:
+        # Generate the QR code
+        qr = pyqrcode.create(text)
+        
+        # Ask the user to specify the save location and file name
+        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
+        
+        # If the user provided a file path, save the QR code as a .png file
+        if file_path:
+            qr.png(file_path, scale=8)
+            messagebox.showinfo("Success", f"QR Code saved as {file_path}")
+    else:
+        messagebox.showwarning("Input Error", "Please enter a URL or string to generate the QR Code.")
+
+# Create the main window
+window = tk.Tk()
+window.title("QR Code Generator")
+
+# Create a label for the input
+label = tk.Label(window, text="Enter URL or String:")
+label.pack(pady=10)
+
+# Create an entry widget for user input
+input_text = tk.Entry(window, width=50)
+input_text.pack(pady=10)
+
+# Create a button to generate the QR code
+generate_button = tk.Button(window, text="Generate QR Code", command=generate_qr)
+generate_button.pack(pady=20)
+
+# Run the Tkinter event loop
+window.mainloop()
