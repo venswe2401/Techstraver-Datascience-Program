@@ -1,0 +1,90 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from itertools import combinations
+from collections import Counter
+
+# Load dataset
+df = pd.read_csv('path_to_your_dataset.csv')
+
+# Handle missing values
+df.dropna(inplace=True)
+
+# Remove duplicates
+df.drop_duplicates(inplace=True)
+
+# Convert data types
+df['date'] = pd.to_datetime(df['date'])
+
+# Extract month and city
+df['month'] = df['date'].dt.month
+df['city'] = df['address'].apply(lambda x: x.split(',')[1].strip())
+
+# Descriptive statistics
+print(df.describe())
+
+# Visualizations
+sns.histplot(df['sales'])
+plt.title('Sales Distribution')
+plt.xlabel('Sales')
+plt.ylabel('Frequency')
+plt.show()
+
+sns.barplot(x='month', y='sales', data=df)
+plt.title('Total Sales by Month')
+plt.xlabel('Month')
+plt.ylabel('Total Sales')
+plt.show()
+
+sns.barplot(x='city', y='sales', data=df)
+plt.title('Total Sales by City')
+plt.xlabel('City')
+plt.ylabel('Total Sales')
+plt.xticks(rotation=90)
+plt.show()
+
+# Best Month for Sales
+best_month = df.groupby('month')['sales'].sum().idxmax()
+best_month_sales = df.groupby('month')['sales'].sum().max()
+print(f"Best month for sales: {best_month} with sales of {best_month_sales}")
+
+# City with the Most Product Sales
+best_city = df.groupby('city')['sales'].sum().idxmax()
+best_city_sales = df.groupby('city')['sales'].sum().max()
+print(f"City with the most sales: {best_city} with sales of {best_city_sales}")
+
+# Optimal Advertisement Timing
+df['hour'] = df['date'].dt.hour
+peak_hour = df.groupby('hour')['sales'].sum().idxmax()
+print(f"Optimal advertisement timing: {peak_hour} o'clock")
+
+# Products Sold Together
+product_combinations = Counter()
+
+for basket in df.groupby('order_id')['product'].apply(list):
+    product_combinations.update(Counter(combinations(basket, 2)))
+
+most_common_combo = product_combinations.most_common(1)
+print(f"Most common product combination: {most_common_combo}")
+
+# Top-Selling Product
+top_product = df.groupby('product')['sales'].sum().idxmax()
+top_product_sales = df.groupby('product')['sales'].sum().max()
+print(f"Top-selling product: {top_product} with sales of {top_product_sales}")
+
+# Least Selling Product by Category and Brand
+least_selling_products = df.groupby(['category', 'brand'])['sales'].sum().idxmin()
+print(f"Least selling products by category and brand: {least_selling_products}")
+
+# Ratings Distribution
+sns.histplot(df['rating'])
+plt.title('Ratings Distribution')
+plt.xlabel('Rating')
+plt.ylabel('Frequency')
+plt.show()
+
+# Best Rated Brands
+best_rated_brand = df.groupby('brand')['rating'].mean().idxmax()
+highest_avg_rating = df.groupby('brand')['rating'].mean().max()
+print(f"Best rated brand: {best_rated_brand} with average rating of {highest_avg_rating}")
