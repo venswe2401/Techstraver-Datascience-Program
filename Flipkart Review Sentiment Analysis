@@ -1,0 +1,120 @@
+# flipkart_review_analysis.py
+
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer
+import re
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import warnings
+
+# Ignore warnings
+warnings.filterwarnings("ignore")
+
+# Step 1: Import Libraries
+def import_libraries():
+    nltk.download('stopwords')
+    nltk.download('vader_lexicon')
+
+# Step 2: Load Dataset
+def load_data(file_path):
+    return pd.read_csv(file_path)
+
+# Step 3: Check for Null Values
+def check_null_values(df):
+    print("Checking for Null Values:\n", df.isnull().sum())
+    df = df.dropna()
+    return df
+
+# Step 4: Data Cleaning
+def clean_data(df):
+    stop_words = set(stopwords.words('english'))
+    stemmer = PorterStemmer()
+    
+    def preprocess_text(text):
+        text = text.lower()  # Convert to lowercase
+        text = re.sub(r'\d+', '', text)  # Remove numbers
+        text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
+        text = ' '.join([stemmer.stem(word) for word in word_tokenize(text) if word not in stop_words])
+        return text
+    
+    df['cleaned_reviews'] = df['review'].apply(preprocess_text)
+    return df
+
+# Step 5: Plot Ratings Distribution
+def plot_ratings(df):
+    plt.figure(figsize=(8, 6))
+    df['rating'].value_counts().plot.pie(autopct='%1.1f%%', startangle=90, cmap='viridis')
+    plt.title('Product Ratings Distribution')
+    plt.ylabel('')
+    plt.show()
+
+# Step 6: Generate WordCloud
+def generate_wordcloud(df):
+    text = ' '.join(df['cleaned_reviews'].tolist())
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+    
+    plt.figure(figsize=(10, 6))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.title('WordCloud of Frequent Words in Reviews')
+    plt.show()
+
+# Step 7: Sentiment Analysis
+def sentiment_analysis(df):
+    sia = SentimentIntensityAnalyzer()
+    df['sentiment_scores'] = df['cleaned_reviews'].apply(lambda x: sia.polarity_scores(x))
+    df['positive'] = df['sentiment_scores'].apply(lambda x: x['pos'])
+    df['neutral'] = df['sentiment_scores'].apply(lambda x: x['neu'])
+    df['negative'] = df['sentiment_scores'].apply(lambda x: x['neg'])
+    df['compound'] = df['sentiment_scores'].apply(lambda x: x['compound'])
+    
+    overall_sentiment = df['compound'].mean()
+    print(f"Overall Sentiment Score: {overall_sentiment:.2f}")
+    
+    return df
+
+# Step 8: Conclusion
+def conclusion(df):
+    overall_sentiment = df['compound'].mean()
+    
+    if overall_sentiment > 0:
+        sentiment = "Positive"
+    elif overall_sentiment < 0:
+        sentiment = "Negative"
+    else:
+        sentiment = "Neutral"
+        
+    print(f"Overall Sentiment: {sentiment}")
+    print("Conclusion: Based on the sentiment analysis, we can gauge customer satisfaction and suggest product/service improvements accordingly.")
+
+# Main function to run the analysis
+def main():
+    file_path = 'flipkart_reviews.csv'  # Replace with the correct path to your dataset
+    import_libraries()
+    
+    df = load_data(file_path)
+    
+    df = check_null_values(df)
+    
+    df = clean_data(df)
+    
+    plot_ratings(df)
+    
+    generate_wordcloud(df)
+    
+    df = sentiment_analysis(df)
+    
+    conclusion(df)
+
+if __name__ == "__main__":
+    main()
