@@ -1,0 +1,103 @@
+# zomato_analysis.py
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Step 1: Import Libraries and Load Data
+def load_data(file_path):
+    return pd.read_csv(file_path)
+
+# Step 2: Clean and Preprocess Data
+def clean_data(df):
+    # Handle missing values
+    df = df.dropna()
+    
+    # Remove duplicates
+    df = df.drop_duplicates()
+    
+    # Convert data types (Example: converting a date column)
+    # df['date'] = pd.to_datetime(df['date'])
+    
+    return df
+
+# Step 3: Conduct Exploratory Data Analysis (EDA)
+def eda(df):
+    # Descriptive statistics
+    print("Descriptive Statistics:\n", df.describe())
+    
+    # Visualization: Number of Restaurants by Country
+    plt.figure(figsize=(10, 6))
+    sns.countplot(x='country', data=df)
+    plt.title('Number of Restaurants by Country')
+    plt.xticks(rotation=90)
+    plt.show()
+    
+    # Visualization: Top 10 Cuisines
+    plt.figure(figsize=(10, 6))
+    sns.countplot(x='cuisines', data=df, order=df['cuisines'].value_counts().index[:10])
+    plt.title('Top 10 Cuisines')
+    plt.xticks(rotation=90)
+    plt.show()
+
+# Step 4: Answer Key Business Questions
+def analyze_data(df):
+    # Total restaurants and cuisines worldwide
+    total_restaurants = df['restaurant_id'].nunique()
+    total_cuisines = df['cuisines'].nunique()
+    print(f"Total Restaurants: {total_restaurants}")
+    print(f"Total Cuisines: {total_cuisines}")
+    
+    # Countries with the greatest number of restaurants
+    restaurants_by_country = df['country'].value_counts()
+    print("\nCountries with the greatest number of restaurants:\n", restaurants_by_country)
+    
+    # Cities in India with the greatest number of value-for-money restaurants
+    india_restaurants = df[df['country'] == 'India']
+    value_for_money = india_restaurants[india_restaurants['price_range'] == 1]['city'].value_counts()
+    print("\nCities in India with the greatest number of value-for-money restaurants:\n", value_for_money)
+    
+    # Top 10 cuisines with the highest number of votes in India
+    top_cuisines = india_restaurants.groupby('cuisines')['votes'].sum().nlargest(10)
+    print("\nTop 10 Cuisines with the highest number of votes in India:\n", top_cuisines)
+    
+    # Countries with restaurants that deliver online
+    online_delivery = df[df['has_online_delivery'] == 'Yes']['country'].value_counts()
+    print("\nCountries with restaurants that deliver online:\n", online_delivery)
+    
+    # Locality with the most restaurants
+    top_locality = df['locality'].value_counts().idxmax()
+    print(f"\nLocality with most restaurants: {top_locality}")
+    
+    # Restaurants with good cuisine and average rating
+    good_cuisine_avg_rating = df.groupby('cuisines')['aggregate_rating'].mean().nlargest(10)
+    print("\nTop 10 Restaurants with Good Cuisine and Average Rating:\n", good_cuisine_avg_rating)
+
+# Step 5: Visualize Insights
+def visualize_insights(df):
+    # Visualization: Top 10 cuisines by votes in India
+    india_restaurants = df[df['country'] == 'India']
+    top_cuisines = india_restaurants.groupby('cuisines')['votes'].sum().nlargest(10)
+    
+    plt.figure(figsize=(10, 6))
+    top_cuisines.plot(kind='barh')
+    plt.title('Top 10 Cuisines by Votes in India')
+    plt.xlabel('Votes')
+    plt.show()
+
+# Main function to run the analysis
+def main():
+    file_path = 'zomato.csv'  # Replace with the correct path to your dataset
+    df = load_data(file_path)
+    
+    df = clean_data(df)
+    
+    eda(df)
+    
+    analyze_data(df)
+    
+    visualize_insights(df)
+
+if __name__ == "__main__":
+    main()
