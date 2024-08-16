@@ -1,0 +1,59 @@
+pip install pdfminer.six spacy
+python -m spacy download en_core_web_sm
+import os
+import re
+import csv
+from pdfminer.high_level import extract_text
+import spacy
+
+# Initialize spaCy NLP model
+nlp = spacy.load('en_core_web_sm')
+
+def extract_text_from_pdf(pdf_path):
+    """Extract text from a PDF file."""
+    return extract_text(pdf_path)
+
+def parse_resume(text):
+    """Parse the resume text to extract information."""
+    # Example regex patterns
+    name_pattern = r"Name[:\s]*([A-Za-z\s]+)"
+    email_pattern = r"Email[:\s]*([\w\.-]+@[\w\.-]+)"
+    phone_pattern = r"Phone[:\s]*([\d\s-]+)"
+    skills_pattern = r"Skills[:\s]*([\w\s,]+)"
+
+    # Extract information
+    name = re.search(name_pattern, text)
+    email = re.search(email_pattern, text)
+    phone = re.search(phone_pattern, text)
+    skills = re.search(skills_pattern, text)
+
+    parsed_data = {
+        'Name': name.group(1) if name else "N/A",
+        'Email': email.group(1) if email else "N/A",
+        'Phone': phone.group(1) if phone else "N/A",
+        'Skills': skills.group(1) if skills else "N/A"
+    }
+
+    return parsed_data
+
+def save_to_csv(data, filename='parsed_resumes.csv'):
+    """Save parsed data to a CSV file."""
+    file_exists = os.path.isfile(filename)
+    with open(filename, mode='a', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=data.keys())
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(data)
+
+def analyze_resume(pdf_path):
+    """Analyze a resume PDF and save the results."""
+    text = extract_text_from_pdf(pdf_path)
+    parsed_data = parse_resume(text)
+    save_to_csv(parsed_data)
+    print(f"Resume from {pdf_path} has been analyzed and saved.")
+
+if __name__ == "__main__":
+    resume_directory = 'resumes/'  # Directory containing resume files
+    for filename in os.listdir(resume_directory):
+        if filename.endswith('.pdf'):
+            analyze_resume(os.path.join(resume_directory, filename))
