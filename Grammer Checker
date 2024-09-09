@@ -1,0 +1,81 @@
+# Required Libraries
+import nltk
+import spacy
+import language_tool_python
+from nltk.tokenize import word_tokenize
+
+# Download necessary NLTK data
+nltk.download('punkt')
+
+# 1. Data Preprocessing
+def preprocess_text(text):
+    """
+    Preprocesses the text by converting it to lowercase and tokenizing it.
+    """
+    # Tokenize and convert text to lowercase
+    words = word_tokenize(text.lower())
+    return ' '.join(words)
+
+# 2. Part-of-Speech Tagging
+def pos_tagging(text, nlp):
+    """
+    Tags each word with its Part-of-Speech (POS) using spaCy.
+    """
+    doc = nlp(text)
+    return [(token.text, token.pos_) for token in doc]
+
+# 3. Dependency Parsing
+def dependency_parsing(text, nlp):
+    """
+    Performs dependency parsing to identify syntactic relationships.
+    """
+    doc = nlp(text)
+    return [(token.text, token.dep_, token.head.text) for token in doc]
+
+# 4. Grammar Rule Checking
+def check_grammar(text):
+    """
+    Uses LanguageTool to identify grammar errors in the text.
+    """
+    tool = language_tool_python.LanguageTool('en-US')
+    matches = tool.check(text)
+    return matches
+
+# 5. Error Correction
+def suggest_corrections(text):
+    """
+    Suggests corrections for grammar errors found in the text using LanguageTool.
+    """
+    tool = language_tool_python.LanguageTool('en-US')
+    corrected_text = tool.correct(text)
+    return corrected_text
+
+# Example Usage
+if __name__ == "__main__":
+    # Example text with grammatical errors
+    text = "This is an example with errorrs in it. She go to school every day."
+
+    # 1. Preprocess Text
+    preprocessed_text = preprocess_text(text)
+    print("Preprocessed Text:\n", preprocessed_text)
+
+    # Load spaCy model for POS tagging and dependency parsing
+    nlp = spacy.load("en_core_web_sm")
+
+    # 2. POS Tagging
+    pos_tags = pos_tagging(preprocessed_text, nlp)
+    print("\nPart-of-Speech (POS) Tags:\n", pos_tags)
+
+    # 3. Dependency Parsing
+    dependencies = dependency_parsing(preprocessed_text, nlp)
+    print("\nDependency Parsing:\n", dependencies)
+
+    # 4. Grammar Rule Checking
+    grammar_errors = check_grammar(preprocessed_text)
+    print("\nGrammar Errors Found:")
+    for error in grammar_errors:
+        print(f"Error: {error.message}\nContext: {error.context}")
+
+    # 5. Suggest Corrections
+    corrected_text = suggest_corrections(preprocessed_text)
+    print("\nCorrected Text:\n", corrected_text)
