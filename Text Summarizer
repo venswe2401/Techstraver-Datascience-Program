@@ -1,0 +1,87 @@
+# Required Libraries
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from gensim.summarization import summarize
+from transformers import BartForConditionalGeneration, BartTokenizer
+from rouge_score import rouge_scorer
+
+# Download necessary NLTK data
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+# 1. Data Preprocessing
+def preprocess_text(text):
+    # Remove stop words, punctuation, and lowercase
+    stop_words = set(stopwords.words('english'))
+    words = word_tokenize(text)
+    words = [word.lower() for word in words if word.isalpha()]
+    words = [word for word in words if word not in stop_words]
+
+    # Lemmatization
+    lemmatizer = WordNetLemmatizer()
+    lemmatized_words = [lemmatizer.lemmatize(word) for word in words]
+
+    return ' '.join(lemmatized_words)
+
+# 2. Extractive Summarization using Gensim's TextRank
+def extractive_summary(text, ratio=0.2):
+    summary = summarize(text, ratio=ratio)
+    return summary
+
+# 3. Abstractive Summarization using BART
+def abstractive_summary(text):
+    model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
+    tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
+
+    inputs = tokenizer([text], max_length=1024, return_tensors='pt', truncation=True)
+    summary_ids = model.generate(inputs['input_ids'], num_beams=4, max_length=150, early_stopping=True)
+    summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+    return summary
+
+# 4. TF-IDF Feature Extraction (can be used in Extractive Summarization)
+def calculate_tfidf(text_documents):
+    tfidf = TfidfVectorizer()
+    tfidf_matrix = tfidf.fit_transform(text_documents)
+    return tfidf_matrix
+
+# 5. Evaluation with ROUGE
+def evaluate_summary(reference, generated_summary):
+    scorer = rouge_scorer.RougeScorer(['rouge1', 'rougeL'], use_stemmer=True)
+    scores = scorer.score(reference, generated_summary)
+    return scores
+
+# Example Usage
+if __name__ == "__main__":
+    # Example long text (You can replace it with your dataset)
+    text = """
+    Artificial intelligence (AI) is intelligence demonstrated by machines, in contrast to the natural intelligence displayed by humans and animals.
+    Leading AI textbooks define the field as the study of "intelligent agents": any device that perceives its environment and takes actions that maximize its chance of successfully achieving its goals.
+    Colloquially, the term "artificial intelligence" is often used to describe machines (or computers) that mimic "cognitive" functions that humans associate with the human mind, such as "learning" and "problem-solving".
+    """
+
+    reference_summary = """
+    Artificial intelligence (AI) is the demonstration of intelligence by machines, which mimic human cognitive functions like learning and problem-solving.
+    """
+
+    # 1. Preprocess text
+    preprocessed_text = preprocess_text(text)
+    print("Preprocessed Text:\n", preprocessed_text)
+
+    # 2. Extractive Summarization
+    ext_summary = extractive_summary(text)
+    print("\nExtractive Summary:\n", ext_summary)
+
+    # 3. Abstractive Summarization
+    abs_summary = abstractive_summary(text)
+    print("\nAbstractive Summary:\n", abs_summary)
+
+    # 4. Evaluate summaries
+    ext_scores = evaluate_summary(reference_summary, ext_summary)
+    abs_scores = evaluate_summary(reference_summary, abs_summary)
+    
+    print("\nExtractive Summary ROUGE Scores:\n", ext_scores)
+    print("\nAbstractive Summary ROUGE Scores:\n", abs_scores)
